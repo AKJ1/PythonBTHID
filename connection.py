@@ -14,7 +14,7 @@ import time  # Used for pausing the process
 import evdev  # Used to get input from the keyboard
 from evdev import *
 import keymap  # Used to map evdev input to hid keycodes
-
+from advertising import *
 
 
 class Bluetooth:
@@ -59,21 +59,9 @@ class Bluetooth:
         self.adapter = dbus.Interface(self.bus.get_object("org.bluez", self.adapter_path), "org.bluez.Adapter1")
         self.adapter.StartDiscovery()
 
-        self.advertisement = dbus.Interface(self.bus.get_object("org.bluez", "/org/bluez/hid/advertisement1"), 'org.bluez.LEAdvertisement1')
-        self.advertisementProps = dbus.Interface(self.bus.get_object("org.bluez", "/org/bluez/hid/advertisement1"), 'org.freedesktop.DBus.Properties')
-        self.advertisementProps.Set('org.bluez.LEAdvertisement1', 'Type', dbus.String('peripheral'))
-
-        self.advertisementProps.Set('org.bluez.LEAdvertisement1', 'ServiceUUIDs', dbus.Array('180D','180F'))
-        self.advertisementProps.Set('org.bluez.LEAdvertisement1', 'SolicitUUIDs', dbus.Array(None))
-
-        self.advertisementProps.Set('org.bluez.LEAdvertisement1', 'ServiceData', dbus.Dictionary('9999', [0x00, 0x01, 0x02, 0x03, 0x04]))
-        self.advertisementProps.Set('org.bluez.LEAdvertisement1', 'ManufacturerData', dbus.Dictionary(0xffff, [0x00, 0x01, 0x02, 0x03, 0x04]))
-
-        self.advertisementProps.Set('org.bluez.LEAdvertisement1', 'IncludeTxPower', dbus.Boolean(True))
-
+        self.advertisement = KeyboardAdvertisement()
         self.adService = dbus.Interface(self.bus.get_object('org.bluez', self.adapter_path), 'org.bluez.LEAdvertisingManager1')
-        self.adService.RegisterAdvertisement("/org/bluez/hid/advertisement1", {})
-
+        self.adService.RegisterAdvertisement('/org/bluez/hid/ad1', {})
 
         self.service = dbus.Interface(self.bus.get_object("org.bluez", self.adapter_path), "org.bluez.Service")
 

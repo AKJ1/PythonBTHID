@@ -1,7 +1,10 @@
 
 import dbus
+from testAdvertise import InvalidArgsException
 
 LE_ADVERTISEMENT_IFACE = 'org.bluez.LEAdvertisement1'
+DBUS_PROP_IFACE = 'org.freedesktop.DBus.Properties'
+
 
 class Advertisement(dbus.service.Object):
 
