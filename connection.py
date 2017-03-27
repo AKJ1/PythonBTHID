@@ -48,12 +48,13 @@ class Bluetooth:
             if (o.endswith("hci0")):
                 self.adapter_path = o;
         print("Selected interface " + self.adapter_path + ". Binding...")
-        self.adapter = dbus.Interface(self.bus.get_object("org.bluez", self.adapter_path), "org.bluez.Adapter1")
+        self.adapter = dbus.Interface(self.bus.get_object("org.bluez", self.adapter_path), "org.freedesktop.DBus.Properties")
         self.adapter.Set('org.bluez.Adapter1', 'Alias', dbus.String("NeggerBT"))
         self.adapter.Set('org.bluez.Adapter1', 'Powered', dbus.Boolean(True))
-        self.adapter.Set('Discoverable', dbus.Boolean(True))
-        self.adapter.Set('Pairable', dbus.Boolean(True))
-        self.adapter.StartDiscovery()
+        self.adapter.Set('org.bluez.Adapter1','Discoverable', dbus.Boolean(True))
+        self.adapter.Set('org.bluez.Adapter1','Pairable', dbus.Boolean(True))
+	self.adapter = dbus.Interface(self.bus.get_object("org.bluez", self.adapter_path), "org.bluez.Adapter1")
+	self.adapter.StartDiscovery()
 
         self.service = dbus.Interface(self.bus.get_object("org.bluez", self.adapter_path), "org.bluez.Service")
 
