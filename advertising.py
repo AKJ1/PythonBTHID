@@ -9,8 +9,8 @@ DBUS_PROP_IFACE = 'org.freedesktop.DBus.Properties'
 class Advertisement(dbus.service.Object):
 
     PATH_BASE = '/org/bluez/hid/ad1'
-    def __init__(self, bus, index, advertising_type):
-        self.path = self.PATH_BASE + str(index)
+    def __init__(self, bus, advertising_type):
+        self.path = self.PATH_BASE ;
         self.bus = bus
         self.ad_type = advertising_type
         self.service_uuids = None
@@ -80,8 +80,8 @@ class Advertisement(dbus.service.Object):
 
 class KeyboardAdvertisement(Advertisement):
 
-    def __init__(self, bus, index):
-        Advertisement.__init__(self, bus, index, 'peripheral')
+    def __init__(self, bus):
+        Advertisement.__init__(self, bus, 'peripheral')
         self.add_service_uuid('180D')
         self.add_service_uuid('180F')
         self.add_manufacturer_data(0xffff, [0x00, 0x01, 0x02, 0x03, 0x04])

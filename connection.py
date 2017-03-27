@@ -59,7 +59,7 @@ class Bluetooth:
         self.adapter = dbus.Interface(self.bus.get_object("org.bluez", self.adapter_path), "org.bluez.Adapter1")
         self.adapter.StartDiscovery()
 
-        self.advertisement = KeyboardAdvertisement()
+        self.advertisement = KeyboardAdvertisement(self.bus)
         self.adService = dbus.Interface(self.bus.get_object('org.bluez', self.adapter_path), 'org.bluez.LEAdvertisingManager1')
         self.adService.RegisterAdvertisement('/org/bluez/hid/ad1', {})
 
