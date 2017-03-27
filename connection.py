@@ -15,42 +15,6 @@ import evdev  # Used to get input from the keyboard
 from evdev import *
 import keymap  # Used to map evdev input to hid keycodes
 
-class BTKbBluezProfile(dbus.service.Object):
-    fd = -1
-
-    @dbus.service.method("org.bluez.Profile1",
-                         in_signature="", out_signature="")
-    def Release(self):
-        print("Release")
-        mainloop.quit()
-
-    @dbus.service.method("org.bluez.Profile1",
-                         in_signature="", out_signature="")
-    def Cancel(self):
-        print("Cancel")
-
-    @dbus.service.method("org.bluez.Profile1", in_signature="oha{sv}", out_signature="")
-    def NewConnection(self, path, fd, properties):
-        self.fd = fd.take()
-        print("NewConnection(%s, %d)" % (path, self.fd))
-        for key in properties.keys():
-            if key == "Version" or key == "Features":
-                print("  %s = 0x%04x" % (key, properties[key]))
-            else:
-                print("  %s = %s" % (key, properties[key]))
-
-    @dbus.service.method("org.bluez.Profile1", in_signature="o", out_signature="")
-    def RequestDisconnection(self, path):
-        print("RequestDisconnection(%s)" % (path))
-
-        if (self.fd > 0):
-            os.close(self.fd)
-            self.fd = -1
-
-    def __init__(self, bus, path):
-        dbus.service.Object.__init__(self, bus, path)
-
-
 class Bluetooth:
     HOST = 0  # BT Mac address
     PORT = 1  # Bluetooth Port Number
@@ -76,38 +40,9 @@ class Bluetooth:
 
         # Set up dbus for advertising the service record
         self.bus = dbus.SystemBus()
-        opts = {
-            "ServiceRecord": self.service_record,
-            "Role": "server",
-            "RequireAuthentication": False,
-            "RequireAuthorization": False
-        }
-        manager = dbus.Interface(bus.get_object("org.bluez", "/org/bluez"), "org.bluez.ProfileManager1")
-        profile = BTKbBluezProfile(bus,"/bluez/yaptb/btkb_profil")
-        try:
-            self.manager = dbus.Interface(self.bus.get_object("org.bluez", "/"),
-                                          "org.freedesktop.DBus.ObjectManager")
-            objects = self.manager.GetManagedObjects()
-            adapter_path = objects.keys()[0]
-            self.service = dbus.Interface(self.bus.get_object("org.bluez", adapter_path),
-                                          "org.bluez.Service")
-        except:
-            sys.exit("Could not configure bluetooth. Is bluetoothd started?")
-
-        # Read the service record from file
-        try:
-            fh = open(sys.path[0] + "/sdp_record.xml", "r")
-            self.service_record = fh.read()
-
-        except:
-            sys.exit("Could not open the sdp record. Exiting...")
-        fh.close()
 
     def listen(self):
         # Advertise our service record
-        print        "Service record added"
-
-        manager.RegisterProfile("/bluez/yaptb/btkb_profil", "24140c29-26b5-4a38-9e01-bb6cd5e9c75e", opts)
         # Start listening on the server sockets
         self.scontrol.listen(1)  # Limit of 1 connection
         self.sinterrupt.listen(1)
