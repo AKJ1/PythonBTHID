@@ -26,10 +26,10 @@ class Bluetooth:
 
     def __init__(self):
         # Set the device class to a keyboard and set the name
-        os.system("hciconfig hci0 class 0x002540")
-        os.system("hciconfig hci0 name Razberi")
+        # os.system("hciconfig hci0 class 0x002540")
+        # os.system("hciconfig hci0 name Razberi")
         # Make device discoverable
-        os.system("hciconfig hci0 piscan")
+        # os.system("hciconfig hci0 piscan")
 
         # Define our two server sockets for communication
         self.scontrol = BluetoothSocket(L2CAP)
@@ -41,40 +41,36 @@ class Bluetooth:
 
         # Set up dbus for advertising the service record
         self.bus = dbus.SystemBus()
-        try:
-            self.manager = dbus.Interface(self.bus.get_object("org.bluez", "/"), "org.freedesktop.DBus.ObjectManager")
-            objects = self.manager.GetManagedObjects()
-            adapter_path = objects.keys()[1]
-            print "Selected interface " + adapter_path + ". Binding..."
-            self.service = dbus.Interface(self.bus.get_object("org.bluez", adapter_path), "org.bluez.Service")
-        except:
-            sys.exit("Could not configure bluetooth. Is bluetoothd started?")
+        self.manager = dbus.Interface(self.bus.get_object("org.bluez", "/"), "org.freedesktop.DBus.ObjectManager")
+        objects = self.manager.GetManagedObjects()
+        for o in objects.keys():
+            print(o)
+            if (o.endswith("hci0")):
+                self.adapter_path = o;
+        print("Selected interface " + self.adapter_path + ". Binding...")
+        self.adapter = dbus.Interface(self.bus.get_object("org.bluez", self.adapter_path), "org.bluez.Adapter1")
+        self.adapter.Set('org.bluez.Adapter1', 'Alias', dbus.String("NeggerBT"))
+        self.adapter.Set('org.bluez.Adapter1', 'Powered', dbus.Boolean(True))
+        self.adapter.Set('Discoverable', dbus.Boolean(True))
+        self.adapter.Set('Pairable', dbus.Boolean(True))
+        self.adapter.StartDiscovery()
+
+        self.service = dbus.Interface(self.bus.get_object("org.bluez", self.adapter_path), "org.bluez.Service")
 
         # Read the service record from file
-      
+
     def advertise_service(sdp_record_xml):
-	try:
+        try:
             fh = open(sys.path[0] + "/sdp_record.xml", "r")
         except:
             sys.exit("Could not open the sdp record. Exiting...")
         fh.close()
 
-	bus = dbus.SystemBus()
-	manager = dbus.Interface(bus.get_object("org.bluez", "/"), "org.bluez.Manager")
-	adapter_path = manager.FindAdapter(self.device_id)
-	service = dbus.Interface(bus.get_object("org.bluez", adapter_path),"org.bluez.Service")
-	service.AddRecord(sdp_record_xml)
-
     def listen(self):
-        # Advertise our service record
-        print "Service record added"
-
         # Start listening on the server sockets
         self.scontrol.listen(1)  # Limit of 1 connection
         self.sinterrupt.listen(1)
         print "Waiting for a connection"
-        bluetooth.advertise_service(self.scontrol, "awesome service bra", "82ccda76-e52b-4e36-8d9e-bd57983cde9d")
-        bluetooth.advertise_service(self.sinterrupt, "awesome service bra", "82ccda76-e52b-4e36-8d9e-bd57983cde9d")
         self.ccontrol, self.cinfo = self.scontrol.accept()
         print "Got a connection on the control channel from " + self.cinfo[Bluetooth.HOST]
         self.cinterrupt, self.cinfo = self.sinterrupt.accept()
@@ -176,3 +172,4 @@ if __name__ == "__main__":
     bt.listen()
     kb = Keyboard()
     kb.event_loop(bt)
+
