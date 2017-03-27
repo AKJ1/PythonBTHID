@@ -44,18 +44,26 @@ class Bluetooth:
         try:
             self.manager = dbus.Interface(self.bus.get_object("org.bluez", "/"), "org.freedesktop.DBus.ObjectManager")
             objects = self.manager.GetManagedObjects()
-            adapter_path = objects.keys()[2]
+            adapter_path = objects.keys()[1]
             print "Selected interface " + adapter_path + ". Binding..."
             self.service = dbus.Interface(self.bus.get_object("org.bluez", adapter_path), "org.bluez.Service")
         except:
             sys.exit("Could not configure bluetooth. Is bluetoothd started?")
 
         # Read the service record from file
-        # try:
-            # fh = open(sys.path[0] + "/sdp_record.xml", "r")
-        # except:
-            # sys.exit("Could not open the sdp record. Exiting...")
-        # fh.close()
+      
+    def advertise_service(sdp_record_xml):
+	try:
+            fh = open(sys.path[0] + "/sdp_record.xml", "r")
+        except:
+            sys.exit("Could not open the sdp record. Exiting...")
+        fh.close()
+
+	bus = dbus.SystemBus()
+	manager = dbus.Interface(bus.get_object("org.bluez", "/"), "org.bluez.Manager")
+	adapter_path = manager.FindAdapter(self.device_id)
+	service = dbus.Interface(bus.get_object("org.bluez", adapter_path),"org.bluez.Service")
+	service.AddRecord(sdp_record_xml)
 
     def listen(self):
         # Advertise our service record
