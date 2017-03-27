@@ -65,8 +65,9 @@ class Bluetooth:
         self.scontrol.listen(1)  # Limit of 1 connection
         self.sinterrupt.listen(1)
         print "Waiting for a connection"
-        self.ccontrol, self.cinfo = self.scontrol.accept()
         bluetooth.advertise_service(self.scontrol, "awesome service bra", "82ccda76-e52b-4e36-8d9e-bd57983cde9d")
+        bluetooth.advertise_service(self.sinterrupt, "awesome service bra", "82ccda76-e52b-4e36-8d9e-bd57983cde9d")
+        self.ccontrol, self.cinfo = self.scontrol.accept()
         print "Got a connection on the control channel from " + self.cinfo[Bluetooth.HOST]
         self.cinterrupt, self.cinfo = self.sinterrupt.accept()
         print "Got a connection on the interrupt channel from " + self.cinfo[Bluetooth.HOST]
