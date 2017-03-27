@@ -16,6 +16,7 @@ from evdev import *
 import keymap  # Used to map evdev input to hid keycodes
 
 
+
 class Bluetooth:
     HOST = 0  # BT Mac address
     PORT = 1  # Bluetooth Port Number
@@ -46,15 +47,33 @@ class Bluetooth:
         for o in objects.keys():
             print(o)
             if (o.endswith("hci0")):
-                self.adapter_path = o;
+                self.adapter_path = o
+
         print("Selected interface " + self.adapter_path + ". Binding...")
-        self.adapter = dbus.Interface(self.bus.get_object("org.bluez", self.adapter_path), "org.freedesktop.DBus.Properties")
-        self.adapter.Set('org.bluez.Adapter1', 'Alias', dbus.String("NeggerBT"))
-        self.adapter.Set('org.bluez.Adapter1', 'Powered', dbus.Boolean(True))
-        self.adapter.Set('org.bluez.Adapter1','Discoverable', dbus.Boolean(True))
-        self.adapter.Set('org.bluez.Adapter1','Pairable', dbus.Boolean(True))
-	self.adapter = dbus.Interface(self.bus.get_object("org.bluez", self.adapter_path), "org.bluez.Adapter1")
-	self.adapter.StartDiscovery()
+        self.adapterProps = dbus.Interface(self.bus.get_object("org.bluez", self.adapter_path), "org.freedesktop.DBus.Properties")
+        self.adapterProps.Set('org.bluez.Adapter1', 'Alias', dbus.String("NeggerBT"))
+        self.adapterProps.Set('org.bluez.Adapter1', 'Powered', dbus.Boolean(True))
+        self.adapterProps.Set('org.bluez.Adapter1', 'Discoverable', dbus.Boolean(True))
+        self.adapterProps.Set('org.bluez.Adapter1', 'Pairable', dbus.Boolean(True))
+
+        self.adapter = dbus.Interface(self.bus.get_object("org.bluez", self.adapter_path), "org.bluez.Adapter1")
+        self.adapter.StartDiscovery()
+
+        self.advertisement = dbus.Interface(self.bus.get_object("org.bluez", "/org/bluez/hid/advertisement1"), 'org.bluez.LEAdvertisement1')
+        self.advertisementProps = dbus.Interface(self.bus.get_object("org.bluez", "/org/bluez/hid/advertisement1"), 'org.freedesktop.DBus.Properties')
+        self.advertisementProps.Set('org.bluez.LEAdvertisement1', 'Type', dbus.String('peripheral'))
+
+        self.advertisementProps.Set('org.bluez.LEAdvertisement1', 'ServiceUUIDs', dbus.Array('180D','180F'))
+        self.advertisementProps.Set('org.bluez.LEAdvertisement1', 'SolicitUUIDs', dbus.Array(None))
+
+        self.advertisementProps.Set('org.bluez.LEAdvertisement1', 'ServiceData', dbus.Dictionary('9999', [0x00, 0x01, 0x02, 0x03, 0x04]))
+        self.advertisementProps.Set('org.bluez.LEAdvertisement1', 'ManufacturerData', dbus.Dictionary(0xffff, [0x00, 0x01, 0x02, 0x03, 0x04]))
+
+        self.advertisementProps.Set('org.bluez.LEAdvertisement1', 'IncludeTxPower', dbus.Boolean(True))
+
+        self.adService = dbus.Interface(self.bus.get_object('org.bluez', self.adapter_path), 'org.bluez.LEAdvertisingManager1')
+        self.adService.RegisterAdvertisement("/org/bluez/hid/advertisement1", {})
+
 
         self.service = dbus.Interface(self.bus.get_object("org.bluez", self.adapter_path), "org.bluez.Service")
 
@@ -173,4 +192,3 @@ if __name__ == "__main__":
     bt.listen()
     kb = Keyboard()
     kb.event_loop(bt)
-
