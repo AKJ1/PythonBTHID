@@ -15,6 +15,7 @@ import evdev  # Used to get input from the keyboard
 from evdev import *
 import keymap  # Used to map evdev input to hid keycodes
 from advertising import *
+import gobject
 
 
 class Bluetooth:
@@ -41,6 +42,7 @@ class Bluetooth:
         self.sinterrupt.bind(("", Bluetooth.P_INTR))
 
         # Set up dbus for advertising the service record
+
         self.bus = dbus.SystemBus()
         self.manager = dbus.Interface(self.bus.get_object("org.bluez", "/"), "org.freedesktop.DBus.ObjectManager")
         objects = self.manager.GetManagedObjects()
@@ -175,8 +177,9 @@ if __name__ == "__main__":
     # We can only run as root
     if not os.geteuid() == 0:
         sys.exit("Only root can run this script")
-
+    dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
     bt = Bluetooth()
     bt.listen()
+    gobject.MainLoop().run()
     kb = Keyboard()
     kb.event_loop(bt)
