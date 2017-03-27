@@ -15,6 +15,7 @@ import evdev  # Used to get input from the keyboard
 from evdev import *
 import keymap  # Used to map evdev input to hid keycodes
 
+
 class Bluetooth:
     HOST = 0  # BT Mac address
     PORT = 1  # Bluetooth Port Number
@@ -40,20 +41,35 @@ class Bluetooth:
 
         # Set up dbus for advertising the service record
         self.bus = dbus.SystemBus()
+        try:
+            self.manager = dbus.Interface(self.bus.get_object("org.bluez", "/"), "org.freedesktop.DBus.ObjectManager")
+            objects = self.manager.GetManagedObjects()
+            adapter_path = objects.keys()[2]
+            print "Selected interface " + adapter_path + ". Binding..."
+            self.service = dbus.Interface(self.bus.get_object("org.bluez", adapter_path), "org.bluez.Service")
+        except:
+            sys.exit("Could not configure bluetooth. Is bluetoothd started?")
+
+        # Read the service record from file
+        # try:
+            # fh = open(sys.path[0] + "/sdp_record.xml", "r")
+        # except:
+            # sys.exit("Could not open the sdp record. Exiting...")
+        # fh.close()
 
     def listen(self):
         # Advertise our service record
+        print "Service record added"
+
         # Start listening on the server sockets
         self.scontrol.listen(1)  # Limit of 1 connection
         self.sinterrupt.listen(1)
-        print
-        "Waiting for a connection"
+        print "Waiting for a connection"
         self.ccontrol, self.cinfo = self.scontrol.accept()
-        print
-        "Got a connection on the control channel from " + self.cinfo[Bluetooth.HOST]
+        bluetooth.advertise_service(self.scontrol, "awesome service bra", "82ccda76-e52b-4e36-8d9e-bd57983cde9d")
+        print "Got a connection on the control channel from " + self.cinfo[Bluetooth.HOST]
         self.cinterrupt, self.cinfo = self.sinterrupt.accept()
-        print
-        "Got a connection on the interrupt channel from " + self.cinfo[Bluetooth.HOST]
+        print "Got a connection on the interrupt channel from " + self.cinfo[Bluetooth.HOST]
 
     def send_input(self, ir):
         # Convert the hex array to a string
@@ -151,4 +167,3 @@ if __name__ == "__main__":
     bt.listen()
     kb = Keyboard()
     kb.event_loop(bt)
-
